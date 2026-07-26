@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Generated test fixtures — regenerate with `npm run fixture`
+fixtures/
+
+# QA harness output
+screenshots/
+
+# macOS
+.DS_Store
+
+# Editor / local env
+.vscode/
+.idea/
+*.local
+.env
+.env.*
