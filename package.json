@@ -1,0 +1,32 @@
+{
+  "name": "pulse-app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Pulse — a private, offline-first health dashboard for your Apple Health export.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "fixture": "tsx tools/generate-export.ts",
+    "icons": "tsx tools/generate-icons.ts",
+    "qa:shots": "tsx tools/screenshot.ts",
+    "qa:stress": "tsx tools/stress.ts",
+    "qa:audit": "tsx tools/audit.ts"
+  },
+  "dependencies": {
+    "fflate": "^0.8.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "playwright": "^1.62.0",
+    "sharp": "^0.35.3",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.2",
+    "vite": "^7.0.0",
+    "vitest": "^3.0.0"
+  }
+}

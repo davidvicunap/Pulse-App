@@ -1,5 +1,3 @@
-# Pulse-App
-WHOOP like app but with Apple Health 
 # Pulse
 
 **A private, offline health dashboard for your Apple Health export.** Recovery, strain
@@ -148,3 +146,111 @@ paging back through history shows what each day actually looked like at the time
 npm test             # 230 unit tests
 npm run typecheck
 ```
+
+Because there is no real export to develop against, `tools/generate-export.ts` produces a
+synthetic one with *coupled* physiology — hard days suppress next-day HRV, short nights
+depress recovery, and there's a slow fitness trend underneath — plus the messy cases that
+break parsers:
+
+- the same metric written by several sources, which naive parsers double-count
+- sleep sessions spanning midnight, with staged sub-intervals and wake-ups
+- sparse days, entirely missing days, and a simulated illness episode
+- a timezone change partway through the history
+- both pre- and post-iOS 16 sleep record formats
+
+It has already earned its keep: it exposed a sleep-attribution bug where keying a night on
+its end timestamp's calendar date split every night in two, because the stage blocks
+between going to bed and midnight end on the *previous* day.
+
+### Browser QA
+
+Three harnesses drive the built app in a real browser, for the things unit tests can't
+reach:
+
+```bash
+npm run build && npm run preview     # then, in another shell:
+npm run qa:shots                     # screenshots of every view, light and dark
+npm run qa:stress                    # large-export timing, jank and heap
+npm run qa:audit                     # offline + accessibility checks
+```
+
+Measured on a 349MB / 730-day synthetic export:
+
+| | |
+| --- | --- |
+| Import time | **6.9s** (50 MB/s) |
+| Worst main-thread frame | **65ms** — zero frames over 100ms |
+| Frame p95 during import | **17.1ms** (60fps held) |
+| Peak JS heap | **9MB** for a 349MB file |
+| Repeat launch from IndexedDB | **148ms** |
+| Bundle | **40KB** gzipped JS, 8KB CSS |
+
+`qa:audit` checks 24 properties including offline boot, focus trapping, keyboard-operable
+charts, contrast, live regions and reduced-motion handling.
+
+---
+
+## Privacy
+
+- **Nothing is uploaded.** There is no endpoint to upload to.
+- **Only a daily summary is stored** — a few hundred KB, not the multi-hundred-MB export.
+- **Delete everything, for real.** Settings → Delete all my data drops the database, the
+  stored key and the caches.
+- **Export your own data** as JSON at any time.
+
+### The optional AI narrative
+
+Off by default. If you enable it and supply your own Anthropic API key:
+
+- only an **aggregated** weekly summary is sent — averages, week-over-week deltas and a
+  workout count, with no timestamps and no individual readings
+- the **exact payload is displayed** before you send anything
+- the key is stored in this browser only, and one tap removes it
+- the fully-local experience remains the default and is unaffected
+
+The request goes directly from your browser to Anthropic. That is deliberate: the
+alternative would be proxying your health summary through a server, which is the thing
+this app exists to avoid.
+
+---
+
+## Accessibility
+
+- Visible focus ring on every interactive element; the whole app is keyboard-operable.
+- Charts are keyboard-scrubbable (arrows to read, `+`/`−` to zoom, `Enter` to open a day)
+  and describe their controls to assistive tech.
+- Sheets trap focus, are `role="dialog"` + `aria-modal`, close on `Escape`, and hide
+  background content from screen readers.
+- Body copy meets WCAG AA on its surface (6.15:1 measured).
+- `prefers-reduced-motion` is honoured completely — animations resolve to their final
+  state rather than being shortened. No information is ever carried by motion alone.
+- Pinch-zoom is not disabled.
+
+---
+
+## Design
+
+See [DESIGN.md](./DESIGN.md) for the full system. The short version: Pulse is an
+**instrument display**, not a dashboard with a health theme. The ECG trace across the top
+is synthesised from the selected day's own physiology — beat spacing from resting heart
+rate, spacing *variance* from HRV (which is literally what HRV measures), amplitude from
+recovery. The same trace draws itself to the true percentage during an import and
+reappears as the sheet grab handle.
+
+---
+
+## Limitations
+
+- Pulse is **not a medical device** and nothing in it is medical advice.
+- It reads an export, not live data — Apple provides no way for a web app to read Health
+  continuously, so keeping current means re-importing (which merges, rather than starting
+  over).
+- Recovery needs roughly three weeks of history before baselines mean much. Until then the
+  app shows an explicit low-confidence state rather than a confident-looking number.
+- Sleep staging is only as good as the device that recorded it.
+- On iOS, a site that hasn't been added to the home screen can have its storage evicted
+  after a period of inactivity. Installing the app makes this much less likely.
+
+## Licence
+
+MIT
